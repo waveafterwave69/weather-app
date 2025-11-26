@@ -1,5 +1,16 @@
 <script setup lang="ts"></script>
 
 <template>
-  <div>weather</div>
+  <div>
+    <div>weather</div>
+    <div>weather</div>
+    <div>weather</div>
+    <div>weather</div>
+    <div>weather</div>
+    <div>weather</div>
+    <div>weather</div>
+    <div>weather</div>
+    <div>weather</div>
+    <div>weather</div>
+  </div>
 </template>

@@ -19,7 +19,48 @@ $accent: #9c27b0;
 $dark: #1d1d1d;
 $dark-page: #121212;
 
+$light: #fdfdfd;
+
 $positive: #21ba45;
 $negative: #c10015;
 $info: #31ccec;
 $warning: #f2c037;
+
+// Theme variables
+// --------------------------------------------------
+
+// Light theme
+$light-bg: #ffffff;
+$light-surface: #f8f9fa;
+$light-card: #ffffff;
+$light-text: #2c3e50;
+$light-text-secondary: #6c757d;
+$light-border: #e9ecef;
+$light-hover: #f8f9fa;
+$light-active: #e9ecef;
+
+// Dark theme
+$dark-bg: #121212;
+$dark-surface: #1e1e1e;
+$dark-card: #2d2d2d;
+$dark-text: #e0e0e0;
+$dark-text-secondary: #a0a0a0;
+$dark-border: #404040;
+$dark-hover: #2a2a2a;
+$dark-active: #363636;
+
+// Semantic colors for both themes
+$light-link: $primary;
+$dark-link: lighten($primary, 15%);
+
+$light-success: $positive;
+$dark-success: lighten($positive, 10%);
+
+$light-error: $negative;
+$dark-error: lighten($negative, 10%);
+
+$light-warning: $warning;
+$dark-warning: lighten($warning, 10%);
+
+$light-info: $info;
+$dark-info: lighten($info, 10%);

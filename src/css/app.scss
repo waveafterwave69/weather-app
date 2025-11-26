@@ -1,1 +1,22 @@
 // app global css in SCSS form
+
+// Quasar автоматически добавляет классы .body--dark и .body--light
+body {
+  background-color: $light-bg;
+  color: $light-text;
+
+  &.body--dark {
+    background-color: $dark-bg;
+    color: $dark-text;
+  }
+}
+
+.container {
+  max-width: 1660px;
+  margin: 0 auto;
+  padding: 0px 15px;
+}
+
+a {
+  text-decoration: none;
+}
