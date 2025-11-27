@@ -3,6 +3,10 @@ import type { RouteRecordRaw } from 'vue-router';
 const routes: RouteRecordRaw[] = [
   {
     path: '/',
+    component: () => import('../pages/AuthPage.vue'),
+  },
+  {
+    path: '/main',
     component: () => import('../pages/MainPage.vue'),
   },
   {
