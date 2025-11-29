@@ -77,6 +77,7 @@ const { isXs } = useMedia();
         :class="isXs ? 'text-subtitle2' : 'text-subtitle1'"
         :size="isXs ? 'md' : 'lg'"
       />
+      <router-link to="/main">Войти</router-link>
 
       <!-- Ссылка на регистрацию -->
       <div class="q-pt-sm text-center">
