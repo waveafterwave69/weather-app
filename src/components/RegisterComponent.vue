@@ -91,7 +91,6 @@ const { isXs } = useMedia();
         color="primary"
         class="full-width q-py-none"
         :class="isXs ? 'text-subtitle2' : 'text-subtitle2'"
-        :size="isXs ? 'md' : 'lg'"
       />
 
       <!-- Ссылка на вход -->
