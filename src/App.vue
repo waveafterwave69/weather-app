@@ -1,5 +1,13 @@
 <script setup lang="ts">
+import { onMounted } from 'vue';
 import HeaderComponent from './components/HeaderComponent.vue';
+import { useThemeStore } from './stores/theme';
+
+const themeStore = useThemeStore();
+
+onMounted(() => {
+  themeStore.initializeTheme();
+});
 </script>
 
 <template>

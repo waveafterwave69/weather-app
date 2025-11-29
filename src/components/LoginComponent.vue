@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useMedia } from 'src/hooks/useMedia';
 import { useAuthStore } from 'src/stores/auth';
 import { useThemeStore } from 'src/stores/theme';
 import { ref, computed } from 'vue';
@@ -9,14 +10,31 @@ const isDark = computed(() => themeStore.isDark);
 
 const email = ref('');
 const password = ref('');
+
+const { isXs } = useMedia();
 </script>
 
 <template>
-  <h2 class="text-h4 text-center q-mt-xl q-mb-md" :class="isDark ? 'text-white' : 'text-dark'">
+  <!-- Адаптивный заголовок -->
+  <h2
+    class="text-center q-mt-xl q-mb-md"
+    :class="[isXs ? 'text-h5' : 'text-h4', isDark ? 'text-white' : 'text-dark']"
+  >
     Вход
   </h2>
-  <div class="q-py-md text-center q-mx-auto" style="max-width: 500px">
+
+  <!-- Адаптивный контейнер -->
+  <div
+    class="q-py-md text-center q-mx-auto"
+    :class="isXs ? 'q-px-sm' : ''"
+    :style="{
+      maxWidth: isXs ? '100%' : '500px',
+      paddingLeft: isXs ? '16px' : '',
+      paddingRight: isXs ? '16px' : '',
+    }"
+  >
     <q-form class="q-gutter-sm">
+      <!-- Поле email -->
       <q-input
         class="q-ma-none"
         outlined
@@ -28,8 +46,10 @@ const password = ref('');
         :color="isDark ? 'primary' : 'primary'"
         :bg-color="isDark ? 'dark' : 'white'"
         :input-style="{ color: isDark ? 'white' : 'dark' }"
+        :dense="isXs"
       />
 
+      <!-- Поле пароля -->
       <q-input
         class="q-ma-none"
         outlined
@@ -45,19 +65,31 @@ const password = ref('');
         :color="isDark ? 'primary' : 'primary'"
         :bg-color="isDark ? 'dark' : 'white'"
         :input-style="{ color: isDark ? 'white' : 'dark' }"
+        :dense="isXs"
       />
 
+      <!-- Кнопка входа -->
       <q-btn
         label="Войти"
         type="submit"
         color="primary"
-        class="full-width q-py-none text-subtitle1"
+        class="full-width q-py-none"
+        :class="isXs ? 'text-subtitle2' : 'text-subtitle1'"
+        :size="isXs ? 'md' : 'lg'"
       />
 
+      <!-- Ссылка на регистрацию -->
       <div class="q-pt-sm text-center">
-        <p :class="isDark ? 'text-white' : 'text-dark'" class="q-mb-md text-subtitle1">
+        <p
+          :class="[isDark ? 'text-white' : 'text-dark', isXs ? 'text-subtitle2' : 'text-subtitle1']"
+          class="q-mb-md"
+        >
           Нет аккаунта?
-          <span outline class="text-primary cursor-pointer" @click="authStore.setRegister">
+          <span
+            class="text-primary cursor-pointer q-ml-xs"
+            @click="authStore.setRegister"
+            :class="isXs ? 'text-subtitle2' : 'text-subtitle1'"
+          >
             Зарегистрироваться
           </span>
         </p>
