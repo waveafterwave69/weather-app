@@ -2,7 +2,6 @@
 import { useThemeStore } from 'src/stores/theme';
 
 const themeStore = useThemeStore();
-console.log('hello');
 </script>
 
 <template>
