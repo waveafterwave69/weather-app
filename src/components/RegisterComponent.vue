@@ -89,8 +89,8 @@ const { isXs } = useMedia();
         label="Зарегистрироваться"
         type="submit"
         color="primary"
-        class="full-width q-py-none"
-        :class="isXs ? 'text-subtitle2' : 'text-subtitle2'"
+        :class="[isDark ? 'text-white' : 'text-dark', isXs ? 'text-subtitle2' : 'text-subtitle1']"
+        class="q-mb-md full-width"
       />
 
       <!-- Ссылка на вход -->
