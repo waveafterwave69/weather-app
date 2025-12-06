@@ -18,8 +18,13 @@ const { isXs } = useMedia();
       <!-- Логотип и заголовок -->
       <div class="row items-center no-wrap">
         <q-toolbar-title>
-          <router-link to="/" class="text-white text-no-wrap" :class="isXs ? 'text-h6' : 'text-h5'">
-            Weather 🌦️
+          <!-- УБРАТЬ ПОТОМ ССЫЛКУ НА MAIN -->
+          <router-link
+            to="/main"
+            class="text-white text-no-wrap"
+            :class="isXs ? 'text-h6' : 'text-h5'"
+          >
+            🌦️ weather
           </router-link>
         </q-toolbar-title>
       </div>

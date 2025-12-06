@@ -1,43 +1,59 @@
 import { defineStore } from 'pinia';
+import { useStorage, usePreferredDark, useMediaQuery } from '@vueuse/core';
+import { ref, watch } from 'vue';
 
-export const useThemeStore = defineStore('theme', {
-  state: () => ({
-    isDark: false,
-  }),
+export const useThemeStore = defineStore('theme', () => {
+  const darkModeStorage = useStorage('darkMode', null);
+  const prefersDark = usePreferredDark();
 
-  actions: {
-    toggleTheme() {
-      this.isDark = !this.isDark;
-      this.applyTheme();
-    },
+  const isDark = ref();
 
-    initializeTheme() {
-      const saved = localStorage.getItem('darkMode');
+  const initializeTheme = () => {
+    if (darkModeStorage.value === null) {
+      // Если в хранилище нет значения, используем системную тему
+      isDark.value = prefersDark.value;
+    } else {
+      // Если есть сохраненное значение, используем его
+      isDark.value = darkModeStorage.value === 'true' || darkModeStorage.value === true;
+    }
 
-      if (saved !== null) {
-        this.isDark = saved === 'true';
-      } else {
-        // Авто-определение системной темы
-        this.isDark = window.matchMedia?.('(prefers-color-scheme: dark)').matches || false;
+    applyTheme();
+
+    const mediaQuery = useMediaQuery('(prefers-color-scheme: dark)');
+
+    watch(mediaQuery, (isSystemDark) => {
+      if (darkModeStorage.value === null) {
+        isDark.value = isSystemDark;
+        applyTheme();
       }
+    });
+  };
 
-      this.applyTheme();
-    },
+  const toggleTheme = () => {
+    isDark.value = !isDark.value;
+    // useStorage автоматически сохранит значение
+    darkModeStorage.value = isDark.value;
+    applyTheme();
+  };
 
-    applyTheme() {
-      // Обновляем атрибут data-theme для кастомных стилей
-      document.documentElement.setAttribute('data-theme', this.isDark ? 'dark' : 'light');
+  const applyTheme = () => {
+    document.documentElement.setAttribute('data-theme', isDark.value ? 'dark' : 'light');
 
-      // Обновляем класс body для Quasar
-      if (this.isDark) {
-        document.body.classList.add('body--dark', 'dark');
-        document.body.classList.remove('body--light');
-      } else {
-        document.body.classList.add('body--light');
-        document.body.classList.remove('body--dark', 'dark');
-      }
+    if (isDark.value) {
+      document.body.classList.add('body--dark', 'dark');
+      document.body.classList.remove('body--light');
+    } else {
+      document.body.classList.add('body--light');
+      document.body.classList.remove('body--dark', 'dark');
+    }
+  };
 
-      localStorage.setItem('darkMode', this.isDark.toString());
-    },
-  },
+  watch(isDark, applyTheme, { immediate: false });
+
+  return {
+    isDark,
+    toggleTheme,
+    initializeTheme,
+    applyTheme,
+  };
 });

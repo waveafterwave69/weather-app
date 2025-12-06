@@ -76,7 +76,6 @@ const { isXs } = useMedia();
         class="full-width q-py-none"
         :class="isXs ? 'text-subtitle2' : 'text-subtitle1'"
       />
-      <!-- <router-link to="/main">Войти</router-link> -->
 
       <!-- Ссылка на регистрацию -->
       <div class="q-pt-sm text-center">
