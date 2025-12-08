@@ -1,20 +1,80 @@
 <script setup lang="ts">
-import { onMounted } from 'vue';
+import { onMounted, ref, watch } from 'vue';
 import HeaderComponent from './components/HeaderComponent.vue';
 import { useThemeStore } from './stores/theme';
 
 const themeStore = useThemeStore();
+const appReady = ref(false);
+
+// Наблюдаем за изменением темы и обновляем атрибут body
+watch(
+  () => themeStore.isDark,
+  (isDark) => {
+    if (isDark) {
+      document.body.setAttribute('data-theme', 'dark');
+    } else {
+      document.body.removeAttribute('data-theme');
+    }
+  },
+);
 
 onMounted(() => {
   themeStore.initializeTheme();
+
+  // Устанавливаем начальную тему
+  if (themeStore.isDark) {
+    document.body.setAttribute('data-theme', 'dark');
+  } else {
+    document.body.removeAttribute('data-theme');
+  }
+
+  // Ждём инициализации Firebase
+  setTimeout(() => {
+    appReady.value = true;
+  }, 1000);
 });
 </script>
 
 <template>
-  <q-layout view="lHh lpr lFf" class="shadow-2 rounded-borders">
+  <div v-if="!appReady" class="fullscreen flex flex-center">
+    <q-spinner size="xl" />
+  </div>
+  <q-layout v-else view="lHh lpr lFf" class="shadow-2 rounded-borders">
     <HeaderComponent />
     <div class="container">
       <router-view />
     </div>
   </q-layout>
 </template>
+
+<style lang="scss">
+// Добавьте эти стили для применения темы ко всему приложению
+body {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+.q-layout {
+  background-color: var(--bg-primary);
+}
+
+// Стили для Quasar компонентов
+.q-card {
+  background-color: var(--bg-surface) !important;
+  color: var(--text-primary) !important;
+}
+
+.q-field {
+  &__control {
+    color: var(--text-primary) !important;
+  }
+
+  &__native {
+    color: var(--text-primary) !important;
+  }
+
+  &__label {
+    color: var(--text-secondary) !important;
+  }
+}
+</style>

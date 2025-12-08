@@ -3,7 +3,9 @@ import { useMedia } from 'src/hooks/useMedia';
 import { useAuthStore } from 'src/stores/auth';
 import { useThemeStore } from 'src/stores/theme';
 import { ref, computed } from 'vue';
+import { useRouter } from 'vue-router';
 
+const router = useRouter();
 const themeStore = useThemeStore();
 const authStore = useAuthStore();
 const isDark = computed(() => themeStore.isDark);
@@ -12,6 +14,29 @@ const email = ref('');
 const password = ref('');
 
 const { isXs } = useMedia();
+
+// Обработка входа
+const handleLogin = async () => {
+  // Валидация формы
+  if (!email.value || !password.value) return;
+
+  if (password.value.length < 6) return;
+
+  try {
+    await authStore.login(email.value, password.value);
+
+    // Редирект на главную страницу (добавлен await)
+    await router.push('/main');
+  } catch (error) {
+    // Ошибка уже обработана в хранилище
+    console.error('Login error:', error);
+  }
+};
+
+// Сброс ошибки при изменении полей
+const clearError = () => {
+  authStore.clearError();
+};
 </script>
 
 <template>
@@ -23,17 +48,21 @@ const { isXs } = useMedia();
     Вход
   </h2>
 
+  <!-- Сообщение об ошибке -->
+
   <!-- Адаптивный контейнер -->
   <div
     class="q-py-md text-center q-mx-auto"
-    :class="isXs ? 'q-px-sm' : ''"
     :style="{
       maxWidth: isXs ? '100%' : '500px',
-      paddingLeft: isXs ? '16px' : '',
-      paddingRight: isXs ? '16px' : '',
     }"
   >
-    <q-form class="q-gutter-sm">
+    <div v-if="authStore.error" class="q-mb-lg q-px-none">
+      <q-banner dense class="bg-negative text-white">
+        {{ authStore.error }}
+      </q-banner>
+    </div>
+    <q-form @submit.prevent="handleLogin" class="q-gutter-sm q-mx-none">
       <!-- Поле email -->
       <q-input
         class="q-ma-none"
@@ -47,6 +76,7 @@ const { isXs } = useMedia();
         :bg-color="isDark ? 'dark' : 'white'"
         :input-style="{ color: isDark ? 'white' : 'dark' }"
         :dense="isXs"
+        @update:model-value="clearError"
       />
 
       <!-- Поле пароля -->
@@ -66,6 +96,7 @@ const { isXs } = useMedia();
         :bg-color="isDark ? 'dark' : 'white'"
         :input-style="{ color: isDark ? 'white' : 'dark' }"
         :dense="isXs"
+        @update:model-value="clearError"
       />
 
       <!-- Кнопка входа -->
@@ -73,8 +104,10 @@ const { isXs } = useMedia();
         label="Войти"
         type="submit"
         color="primary"
-        class="full-width q-py-none"
+        class="full-width"
         :class="isXs ? 'text-subtitle2' : 'text-subtitle1'"
+        :loading="authStore.loading"
+        :disable="authStore.loading"
       />
 
       <!-- Ссылка на регистрацию -->
@@ -86,7 +119,7 @@ const { isXs } = useMedia();
           Нет аккаунта?
           <span
             class="text-primary cursor-pointer q-ml-xs"
-            @click="authStore.setRegister"
+            @click="authStore.setRegisterMode"
             :class="isXs ? 'text-subtitle2' : 'text-subtitle1'"
           >
             Зарегистрироваться
