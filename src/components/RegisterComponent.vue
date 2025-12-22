@@ -79,7 +79,7 @@ const clearError = () => {
     <q-form @submit.prevent="handleRegister" class="q-gutter-sm q-mx-none q-px-none">
       <!-- Поле имени -->
       <q-input
-        class="q-mx-none"
+        class="q-ma-none"
         outlined
         v-model="name"
         label="Имя"
@@ -95,7 +95,7 @@ const clearError = () => {
 
       <!-- Поле email -->
       <q-input
-        class="q-mx-none"
+        class="q-ma-none"
         outlined
         v-model="email"
         label="Email"
@@ -111,7 +111,7 @@ const clearError = () => {
 
       <!-- Поле пароля -->
       <q-input
-        class="q-mx-none"
+        class="q-ma-none"
         outlined
         type="password"
         v-model="password"
@@ -128,7 +128,7 @@ const clearError = () => {
 
       <!-- Поле подтверждения пароля -->
       <q-input
-        class="q-mx-none"
+        class="q-ma-none"
         outlined
         type="password"
         v-model="confirmPassword"

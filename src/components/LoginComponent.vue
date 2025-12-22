@@ -48,8 +48,6 @@ const clearError = () => {
     Вход
   </h2>
 
-  <!-- Сообщение об ошибке -->
-
   <!-- Адаптивный контейнер -->
   <div
     class="q-py-md text-center q-mx-auto"
@@ -57,6 +55,7 @@ const clearError = () => {
       maxWidth: isXs ? '100%' : '500px',
     }"
   >
+    <!-- Сообщение об ошибке -->
     <div v-if="authStore.error" class="q-mb-lg q-px-none">
       <q-banner dense class="bg-negative text-white">
         {{ authStore.error }}
