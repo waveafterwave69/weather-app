@@ -1,9 +1,14 @@
 <script setup lang="ts">
-import { onMounted, ref, watch } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import HeaderComponent from './components/HeaderComponent.vue';
 import { useThemeStore } from './stores/theme';
+import { useRouter } from 'vue-router';
+import { useAuthStore } from './stores/auth';
 
 const themeStore = useThemeStore();
+const authStore = useAuthStore();
+const router = useRouter();
+const user = computed(() => authStore.user);
 const appReady = ref(false);
 
 // Наблюдаем за изменением темы и обновляем атрибут body
@@ -32,6 +37,12 @@ onMounted(() => {
   setTimeout(() => {
     appReady.value = true;
   }, 1000);
+});
+
+onMounted(() => {
+  if (user) {
+    router.push('/main');
+  }
 });
 </script>
 
