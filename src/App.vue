@@ -23,7 +23,8 @@ watch(
   },
 );
 
-onMounted(() => {
+onMounted(async () => {
+  // Инициализируем тему
   themeStore.initializeTheme();
 
   // Устанавливаем начальную тему
@@ -34,15 +35,14 @@ onMounted(() => {
   }
 
   // Ждём инициализации Firebase
-  setTimeout(() => {
-    appReady.value = true;
-  }, 1000);
-});
+  await new Promise((resolve) => setTimeout(resolve, 1000));
 
-onMounted(async () => {
+  // Проверяем пользователя и перенаправляем
   if (user.value) {
     await router.push('/main');
   }
+
+  appReady.value = true;
 });
 </script>
 
