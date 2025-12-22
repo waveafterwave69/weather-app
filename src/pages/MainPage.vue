@@ -162,14 +162,17 @@ const getWindDirection = (degrees: number) => {
       filled
       v-model="searchValue"
       label="Поиск города"
-      :dark="themeStore.isDark"
-      color="primary"
-      :bg-color="themeStore.isDark ? 'grey-9' : 'white'"
-      class="q-mt-lg"
       @keypress="handleKeyPress"
       :loading="loading"
       :error="!!error"
       :error-message="error || undefined"
+      :dark="themeStore.isDark"
+      :color="themeStore.isDark ? 'primary' : 'primary'"
+      :bg-color="themeStore.isDark ? 'bg-surface' : 'bg-surface'"
+      :input-style="{
+        color: themeStore.isDark ? 'var(--text-primary)' : 'var(--text-primary)',
+      }"
+      class="q-mt-md"
     />
 
     <!-- Отображение погоды -->

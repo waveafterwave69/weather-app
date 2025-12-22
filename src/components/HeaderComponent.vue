@@ -44,7 +44,7 @@ const handleLogOut = async () => {
       <!-- Профиль -->
       <div class="q-pa-md" v-if="user">
         <q-btn flat round dense icon="person" color="white" size="md" class="q-ml-md">
-          <q-menu>
+          <q-menu class="bg-dark text-white">
             <div class="row no-wrap q-pa-md">
               <div class="column items-center">
                 <q-avatar size="52px">
