@@ -266,7 +266,7 @@ const getWindDirection = (degrees: number) => {
 
         <!-- Восход и закат -->
         <div class="row q-col-gutter-md q-mt-md">
-          <div class="col-12 col-sm-4">
+          <div class="col-12 col-sm-3">
             <div class="text-caption text-grey">Восход</div>
             <div class="row items-center q-mt-xs">
               <q-icon name="wb_sunny" size="20px" class="q-mr-sm" color="warning" />
@@ -275,7 +275,7 @@ const getWindDirection = (degrees: number) => {
               </div>
             </div>
           </div>
-          <div class="col-12 col-sm-4">
+          <div class="col-12 col-sm-3">
             <div class="text-caption text-grey">Закат</div>
             <div class="row items-center q-mt-xs">
               <q-icon name="nightlight" size="20px" class="q-mr-sm" color="deep-orange" />
@@ -284,7 +284,7 @@ const getWindDirection = (degrees: number) => {
               </div>
             </div>
           </div>
-          <div class="col-12 col-sm-4">
+          <div class="col-12 col-sm-3">
             <div class="text-caption text-grey">Мин/Макс</div>
             <div class="row items-center q-mt-xs">
               <q-icon name="thermostat" size="20px" class="q-mr-sm" color="red" />
