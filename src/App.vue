@@ -39,9 +39,9 @@ onMounted(() => {
   }, 1000);
 });
 
-onMounted(() => {
-  if (user) {
-    router.push('/main');
+onMounted(async () => {
+  if (user.value) {
+    await router.push('/main');
   }
 });
 </script>
