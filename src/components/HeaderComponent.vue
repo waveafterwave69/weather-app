@@ -3,11 +3,18 @@ import { useThemeStore } from 'src/stores/theme';
 import { useMedia } from 'src/hooks/useMedia';
 import { useAuthStore } from 'src/stores/auth';
 import { computed } from 'vue';
+import { useRouter } from 'vue-router';
 
 const themeStore = useThemeStore();
 const authStore = useAuthStore();
+const router = useRouter();
 const user = computed(() => authStore.user);
 const { isXs } = useMedia();
+
+const handleLogOut = async () => {
+  await authStore.logout();
+  await router.push('/');
+};
 </script>
 
 <template>
@@ -47,7 +54,14 @@ const { isXs } = useMedia();
                 <div class="text-subtitle1 q-mt-md">{{ user.displayName }}</div>
                 <div class="text-subtitle2 q-mb-md">{{ user.email }}</div>
 
-                <q-btn color="primary" label="Выйти" push size="md" v-close-popup />
+                <q-btn
+                  color="primary"
+                  label="Выйти"
+                  push
+                  size="md"
+                  v-close-popup
+                  @click="handleLogOut"
+                />
               </div>
             </div>
           </q-menu>
