@@ -18,8 +18,7 @@ const handleLogOut = async () => {
 </script>
 
 <template>
-  <header
-    class="header"
+  <q-header
     :class="[
       themeStore.isDark ? 'bg-dark' : 'bg-primary',
       themeStore.isDark ? 'shadow-1' : 'shadow-1',
@@ -30,7 +29,16 @@ const handleLogOut = async () => {
       <div class="row items-center no-wrap">
         <q-toolbar-title>
           <router-link
+            v-if="user"
             to="/main"
+            class="text-white text-no-wrap"
+            :class="isXs ? 'text-h6' : 'text-h5'"
+          >
+            🌦️ weather
+          </router-link>
+          <router-link
+            v-else
+            to="/"
             class="text-white text-no-wrap"
             :class="isXs ? 'text-h6' : 'text-h5'"
           >
@@ -84,5 +92,5 @@ const handleLogOut = async () => {
         </q-tooltip>
       </q-btn>
     </q-toolbar>
-  </header>
+  </q-header>
 </template>

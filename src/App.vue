@@ -36,13 +36,12 @@ onMounted(async () => {
 
   // Ждём инициализации Firebase
   await new Promise((resolve) => setTimeout(resolve, 1000));
+  appReady.value = true;
 
   // Проверяем пользователя и перенаправляем
   if (user.value) {
     await router.push('/main');
   }
-
-  appReady.value = true;
 });
 </script>
 

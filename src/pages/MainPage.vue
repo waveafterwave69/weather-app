@@ -157,7 +157,7 @@ const getWindDirection = (degrees: number) => {
 </script>
 
 <template>
-  <div class="full-width">
+  <div class="full-width q-pt-xl">
     <q-input
       filled
       v-model="searchValue"
@@ -172,7 +172,7 @@ const getWindDirection = (degrees: number) => {
       :input-style="{
         color: themeStore.isDark ? 'var(--text-primary)' : 'var(--text-primary)',
       }"
-      class="q-mt-md"
+      class="q-mt-xl"
     />
 
     <!-- Отображение погоды -->
