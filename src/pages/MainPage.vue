@@ -31,13 +31,28 @@ interface CurrentWeather {
   visibility: number;
   dt: number;
   timezone: number;
+  coord?: {
+    lat: number;
+    lon: number;
+  };
+}
+
+interface GeolocationError extends Error {
+  code?: number;
+  PERMISSION_DENIED?: number;
+  POSITION_UNAVAILABLE?: number;
+  TIMEOUT?: number;
 }
 
 const themeStore = useThemeStore();
-const searchValue = ref<string>('Пенза');
+const searchValue = ref<string>('');
 const weatherData = ref<CurrentWeather | null>(null);
 const loading = ref<boolean>(false);
+const locationLoading = ref<boolean>(false);
 const error = ref<string | null>(null);
+const userLocation = ref<{ lat: number; lon: number } | null>(null);
+const locationDenied = ref<boolean>(false);
+const locationError = ref<string>('');
 
 // Функция для получения иконки погоды
 const getWeatherIcon = (iconCode?: string): string => {
@@ -92,8 +107,8 @@ const capitalizeFirstLetter = (str?: string): string => {
   return str.charAt(0).toUpperCase() + str.slice(1);
 };
 
-// Функция для получения погоды
-const fetchWeather = async (city: string): Promise<void> => {
+// Функция для получения погоды по названию города
+const fetchWeatherByCity = async (city: string): Promise<void> => {
   if (!city.trim()) {
     weatherData.value = null;
     return;
@@ -105,7 +120,8 @@ const fetchWeather = async (city: string): Promise<void> => {
   try {
     const result = await weatherService.getCurrentWeather(city);
     weatherData.value = result as CurrentWeather;
-    console.log('Weather data:', result);
+    searchValue.value = result.name;
+    console.log('Weather data by city:', result);
   } catch (err: unknown) {
     const errorMessage = err instanceof Error ? err.message : 'Не удалось получить данные о погоде';
     error.value = errorMessage;
@@ -116,9 +132,154 @@ const fetchWeather = async (city: string): Promise<void> => {
   }
 };
 
+// Функция для получения погоды по координатам
+const fetchWeatherByCoords = async (lat: number, lon: number): Promise<void> => {
+  loading.value = true;
+  error.value = null;
+
+  try {
+    const result = await weatherService.getWeatherByCoords(lat, lon);
+    weatherData.value = result as CurrentWeather;
+    searchValue.value = `${result.name}`;
+    userLocation.value = { lat, lon };
+    console.log('Weather data by coords:', result);
+  } catch (err: unknown) {
+    const errorMessage = err instanceof Error ? err.message : 'Не удалось получить данные о погоде';
+    error.value = errorMessage;
+    console.error('Error fetching weather by coords:', err);
+    weatherData.value = null;
+  } finally {
+    loading.value = false;
+  }
+};
+
+// Функция для получения текущего местоположения пользователя
+const getUserLocation = (): Promise<GeolocationPosition> => {
+  return new Promise((resolve, reject) => {
+    if (!navigator.geolocation) {
+      reject(new Error('Геолокация не поддерживается вашим браузером'));
+      return;
+    }
+
+    console.log('Requesting geolocation...');
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        console.log('Geolocation success:', position.coords);
+        resolve(position);
+      },
+      (err) => {
+        console.error('Geolocation error:', err);
+        // Преобразуем GeolocationPositionError в Error объект
+        const errorMessage = getGeolocationErrorMessage(err);
+        const error = new Error(errorMessage) as GeolocationError;
+        error.code = err.code;
+        error.PERMISSION_DENIED = 1;
+        error.POSITION_UNAVAILABLE = 2;
+        error.TIMEOUT = 3;
+        reject(error);
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 15000,
+        maximumAge: 0,
+      },
+    );
+  });
+};
+
+// Функция для получения сообщения об ошибке геолокации
+const getGeolocationErrorMessage = (error: GeolocationPositionError): string => {
+  switch (error.code) {
+    case error.PERMISSION_DENIED:
+      return 'Доступ к геолокации запрещен. Пожалуйста, разрешите доступ в настройках браузера.';
+    case error.POSITION_UNAVAILABLE:
+      return 'Информация о местоположении недоступна.';
+    case error.TIMEOUT:
+      return 'Превышено время ожидания определения местоположения.';
+    default:
+      return 'Не удалось определить ваше местоположение.';
+  }
+};
+
+// Автоматическое определение местоположения
+const detectUserLocation = async (): Promise<void> => {
+  console.log('Starting location detection...');
+  locationLoading.value = true;
+  locationDenied.value = false;
+  locationError.value = '';
+
+  try {
+    const position = await getUserLocation();
+    const { latitude, longitude } = position.coords;
+    const accuracy = position.coords.accuracy;
+
+    console.log(`User location detected: lat=${latitude}, lon=${longitude}, accuracy=${accuracy}m`);
+
+    if (accuracy > 5000) {
+      console.warn('Low location accuracy:', accuracy);
+    }
+
+    await fetchWeatherByCoords(latitude, longitude);
+  } catch (err: unknown) {
+    console.error('Error in detectUserLocation:', err);
+
+    if (err instanceof Error) {
+      const geolocationErr = err as GeolocationError;
+      locationError.value = err.message;
+
+      if (
+        geolocationErr.code === geolocationErr.PERMISSION_DENIED ||
+        err.message.includes('запрещен') ||
+        err.message.includes('permission')
+      ) {
+        locationDenied.value = true;
+        error.value = err.message;
+        console.log('Location permission denied');
+      } else if (
+        geolocationErr.code === geolocationErr.TIMEOUT ||
+        err.message.includes('время') ||
+        err.message.includes('timeout')
+      ) {
+        error.value = err.message;
+      } else if (
+        geolocationErr.code === geolocationErr.POSITION_UNAVAILABLE ||
+        err.message.includes('недоступна') ||
+        err.message.includes('unavailable')
+      ) {
+        error.value = err.message;
+      } else {
+        error.value = err.message || 'Не удалось определить ваше местоположение';
+      }
+    } else {
+      error.value = 'Не удалось определить ваше местоположение';
+    }
+
+    // Загружаем погоду для города по умолчанию
+    await fetchWeatherByCity('Москва');
+  } finally {
+    locationLoading.value = false;
+  }
+};
+
+// Кнопка для повторного запроса местоположения
+const retryLocationDetection = async (): Promise<void> => {
+  console.log('Retrying location detection...');
+  locationDenied.value = false;
+  locationError.value = '';
+  error.value = null;
+  await detectUserLocation();
+};
+
 // Загрузка начальных данных
-onMounted(async () => {
-  await fetchWeather(searchValue.value);
+onMounted(() => {
+  console.log('Component mounted, starting location detection...');
+  // Используем setTimeout для гарантии, что DOM готов
+  setTimeout(() => {
+    detectUserLocation().catch((err) => {
+      console.error('Failed to detect location on mount:', err);
+    });
+  }, 100);
 });
 
 // Отслеживание изменений в инпуте с debounce
@@ -127,14 +288,16 @@ watch(searchValue, (newValue) => {
   if (timeoutId) clearTimeout(timeoutId);
 
   timeoutId = setTimeout(() => {
-    void fetchWeather(newValue || '');
+    if (newValue.trim()) {
+      void fetchWeatherByCity(newValue);
+    }
   }, 500);
 });
 
 // Обработка нажатия Enter
 const handleKeyPress = (event: KeyboardEvent) => {
   if (event.key === 'Enter' && searchValue.value) {
-    void fetchWeather(searchValue.value);
+    void fetchWeatherByCity(searchValue.value);
   }
 };
 
@@ -158,6 +321,7 @@ const getWindDirection = (degrees: number) => {
 
 <template>
   <div class="full-width q-pt-xl">
+    <!-- Поле поиска с кнопкой определения местоположения -->
     <q-input
       filled
       v-model="searchValue"
@@ -172,8 +336,33 @@ const getWindDirection = (degrees: number) => {
       :input-style="{
         color: themeStore.isDark ? 'var(--text-primary)' : 'var(--text-primary)',
       }"
-      class="q-mt-xl"
-    />
+      class="q-mb-lg q-mt-xl"
+    >
+      <template v-slot:prepend>
+        <q-icon name="search" />
+      </template>
+      <template v-slot:append>
+        <q-btn
+          flat
+          dense
+          round
+          icon="my_location"
+          @click="retryLocationDetection"
+          :loading="locationLoading"
+          :color="themeStore.isDark ? 'primary' : 'primary'"
+          size="sm"
+        >
+          <q-tooltip>Определить мое местоположение</q-tooltip>
+        </q-btn>
+      </template>
+    </q-input>
+
+    <!-- Сообщение об определении местоположения -->
+    <div v-if="locationLoading" class="q-mb-md text-center">
+      <q-spinner size="24px" color="primary" />
+      <div class="q-mt-xs text-caption">Определение вашего местоположения...</div>
+      <div class="q-mt-xs text-caption text-grey">Пожалуйста, разрешите доступ к геолокации</div>
+    </div>
 
     <!-- Отображение погоды -->
     <div v-if="weatherData" class="q-mt-sm">
@@ -186,6 +375,20 @@ const getWindDirection = (degrees: number) => {
           <div>
             <div class="text-h6 text-weight-bold">
               {{ weatherData.name }}, {{ weatherData.sys?.country }}
+              <q-icon
+                v-if="
+                  userLocation &&
+                  weatherData.coord &&
+                  Math.abs(userLocation.lat - weatherData.coord.lat) < 0.1 &&
+                  Math.abs(userLocation.lon - weatherData.coord.lon) < 0.1
+                "
+                name="my_location"
+                size="16px"
+                color="primary"
+                class="q-ml-xs"
+              >
+                <q-tooltip>Ваше текущее местоположение</q-tooltip>
+              </q-icon>
             </div>
             <div class="text-caption text-grey q-mt-xs">
               {{
@@ -301,22 +504,50 @@ const getWindDirection = (degrees: number) => {
       </q-card>
     </div>
 
-    <!-- Состояние загрузки -->
-    <div v-else-if="loading" class="q-mt-xl text-center">
-      <q-spinner size="50px" color="primary" />
-      <div class="q-mt-md text-subtitle1">Загрузка данных...</div>
+    <!-- Сообщение, если доступ к геолокации запрещен -->
+    <div v-if="locationDenied && !weatherData" class="q-mt-xl text-center">
+      <q-icon name="location_off" size="48px" color="warning" />
+      <div class="q-mt-md text-subtitle1">Доступ к местоположению запрещен</div>
+      <div class="q-mt-sm text-body2 text-grey">
+        Для автоматического определения погоды разрешите доступ к геолокации:
+      </div>
+      <div class="q-mt-sm text-body2 text-grey">
+        1. Нажмите на иконку замка рядом с адресной строкой<br />
+        2. Найдите "Местоположение"<br />
+        3. Выберите "Разрешить"<br />
+        4. Обновите страницу или нажмите кнопку ниже
+      </div>
+      <div class="q-mt-sm text-body2 text-grey">Или введите город вручную в поле поиска выше</div>
+      <q-btn
+        color="primary"
+        label="Повторить запрос местоположения"
+        @click="retryLocationDetection"
+        class="q-mt-md"
+        icon="my_location"
+      />
+      <q-btn
+        color="secondary"
+        label="Использовать Москву"
+        @click="fetchWeatherByCity('Москва')"
+        class="q-mt-md q-ml-sm"
+        flat
+      />
     </div>
 
     <!-- Сообщение, если город не найден -->
-    <div v-else-if="searchValue && !loading && !weatherData" class="q-mt-xl text-center">
+    <div
+      v-else-if="searchValue && !loading && !weatherData && !locationDenied"
+      class="q-mt-xl text-center"
+    >
       <q-icon name="location_off" size="48px" color="grey" />
       <div class="q-mt-md text-subtitle1">Город не найден. Попробуйте другой.</div>
     </div>
 
     <!-- Начальное сообщение -->
-    <div v-else-if="!searchValue && !loading" class="q-mt-xl text-center">
+    <div v-else-if="!searchValue && !loading && !locationDenied" class="q-mt-xl text-center">
       <q-icon name="search" size="48px" color="grey" />
-      <div class="q-mt-md text-subtitle1">Введите название города для поиска погоды</div>
+      <div class="q-mt-md text-subtitle1">Определяем ваше местоположение...</div>
+      <div class="q-mt-sm text-body2 text-grey">Или введите город вручную</div>
     </div>
   </div>
 </template>
