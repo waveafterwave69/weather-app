@@ -542,12 +542,5 @@ const getWindDirection = (degrees: number) => {
       <q-icon name="location_off" size="48px" color="grey" />
       <div class="q-mt-md text-subtitle1">Город не найден. Попробуйте другой.</div>
     </div>
-
-    <!-- Начальное сообщение -->
-    <div v-else-if="!searchValue && !loading && !locationDenied" class="q-mt-xl text-center">
-      <q-icon name="search" size="48px" color="grey" />
-      <div class="q-mt-md text-subtitle1">Определяем ваше местоположение...</div>
-      <div class="q-mt-sm text-body2 text-grey">Или введите город вручную</div>
-    </div>
   </div>
 </template>

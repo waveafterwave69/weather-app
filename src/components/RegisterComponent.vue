@@ -57,7 +57,7 @@ const clearError = () => {
 <template>
   <!-- Адаптивный заголовок -->
   <h2
-    class="text-center q-mb-md q-mt-xl"
+    class="text-center q-mb-md q-mt-xl q-pt-xl"
     :class="[isXs ? 'text-h5' : 'text-h4 q-mt-xl', isDark ? 'text-white' : 'text-dark']"
   >
     Регистрация
