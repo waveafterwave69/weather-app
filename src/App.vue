@@ -49,7 +49,7 @@ onMounted(async () => {
   <div v-if="!appReady" class="fullscreen flex flex-center">
     <q-spinner size="xl" />
   </div>
-  <q-layout v-else view="lHh lpr lFf" class="shadow-2 rounded-borders">
+  <q-layout v-else view="lHh lpr lFf">
     <HeaderComponent />
     <div class="container">
       <router-view />
