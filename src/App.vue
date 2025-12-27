@@ -2,16 +2,20 @@
 import { computed, onMounted, ref, watch } from 'vue';
 import HeaderComponent from './components/HeaderComponent.vue';
 import { useThemeStore } from './stores/theme';
-import { useRouter } from 'vue-router';
+import { useRouter, useRoute } from 'vue-router';
 import { useAuthStore } from './stores/auth';
 
 const themeStore = useThemeStore();
 const authStore = useAuthStore();
 const router = useRouter();
-const user = computed(() => authStore.user);
+const route = useRoute();
 const appReady = ref(false);
 
-// Наблюдаем за изменением темы и обновляем атрибут body
+// Компьютед для удобства - используем уже существующий геттер из хранилища
+const isAuthenticated = computed(() => authStore.isAuthenticated);
+const isAuthPage = computed(() => route.path === '/');
+
+// Наблюдаем за изменением темы
 watch(
   () => themeStore.isDark,
   (isDark) => {
@@ -21,6 +25,60 @@ watch(
       document.body.removeAttribute('data-theme');
     }
   },
+  { immediate: true },
+);
+
+// Наблюдаем за изменениями авторизации
+watch(
+  isAuthenticated,
+  (authenticated) => {
+    if (!appReady.value) return;
+
+    const redirect = async () => {
+      try {
+        if (authenticated && isAuthPage.value) {
+          // Если авторизовались и находимся на странице авторизации
+          await router.push('/main');
+        } else if (!authenticated && !isAuthPage.value) {
+          // Если вышли из системы и не на странице авторизации
+          await router.push('/');
+        }
+      } catch (error) {
+        console.error('Navigation error:', error);
+        // Можно добавить обработку ошибок навигации
+      }
+    };
+
+    void redirect(); // Используем void для игнорирования промиса
+  },
+  { immediate: true }, // Добавляем immediate: true для немедленного выполнения
+);
+
+// Наблюдаем за маршрутом
+watch(
+  () => route.path,
+  (path) => {
+    if (!appReady.value) return;
+
+    const redirect = async () => {
+      try {
+        // Если не авторизован и пытается получить доступ к защищенной странице
+        if (!isAuthenticated.value && path !== '/') {
+          await router.push('/');
+        }
+        // Если авторизован и находится на странице авторизации
+        else if (isAuthenticated.value && path === '/') {
+          await router.push('/main');
+        }
+      } catch (error) {
+        console.error('Navigation error:', error);
+        // Можно добавить обработку ошибок навигации
+      }
+    };
+
+    void redirect(); // Используем void для игнорирования промиса
+  },
+  { immediate: true }, // Добавляем immediate: true
 );
 
 onMounted(async () => {
@@ -34,13 +92,20 @@ onMounted(async () => {
     document.body.removeAttribute('data-theme');
   }
 
-  // Ждём инициализации Firebase
-  await new Promise((resolve) => setTimeout(resolve, 1000));
+  // Даем время на инициализацию Firebase (auth уже следит за состоянием через onAuthStateChanged)
+  await new Promise((resolve) => setTimeout(resolve, 500));
+
   appReady.value = true;
 
-  // Проверяем пользователя и перенаправляем
-  if (user.value) {
-    await router.push('/main');
+  // Первоначальная проверка маршрута
+  try {
+    if (isAuthenticated.value && isAuthPage.value) {
+      await router.push('/main');
+    } else if (!isAuthenticated.value && !isAuthPage.value) {
+      await router.push('/');
+    }
+  } catch (error) {
+    console.error('Initial navigation error:', error);
   }
 });
 </script>
@@ -50,7 +115,7 @@ onMounted(async () => {
     <q-spinner size="xl" />
   </div>
   <q-layout v-else view="lHh lpr lFf">
-    <HeaderComponent />
+    <HeaderComponent v-if="isAuthenticated" />
     <div class="container">
       <router-view />
     </div>
@@ -58,7 +123,6 @@ onMounted(async () => {
 </template>
 
 <style lang="scss">
-// Добавьте эти стили для применения темы ко всему приложению
 body {
   background-color: var(--bg-primary);
   color: var(--text-primary);

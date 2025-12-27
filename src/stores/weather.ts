@@ -109,7 +109,13 @@ export const useWeatherStore = defineStore('weather', () => {
 
   // Функция для получения погоды по названию города
   const fetchWeatherByCity = async (city: string): Promise<void> => {
-    if (!city.trim()) {
+    // Нормализуем строку: убираем лишние пробелы и приводим к единому формату
+    const normalizedCity = city
+      .trim() // убираем пробелы в начале и конце
+      .replace(/\s+/g, ' ') // заменяем множественные пробелы на один
+      .toLowerCase(); // приводим к нижнему регистру для консистентности
+
+    if (!normalizedCity) {
       weatherData.value = null;
       return;
     }
@@ -118,8 +124,10 @@ export const useWeatherStore = defineStore('weather', () => {
     error.value = null;
 
     try {
-      const result = await weatherService.getCurrentWeather(city);
+      // Отправляем нормализованное название города
+      const result = await weatherService.getCurrentWeather(normalizedCity);
       weatherData.value = result as CurrentWeather;
+      // Сохраняем оригинальное название из ответа API
       searchValue.value = result.name;
       console.log('Weather data by city:', result);
     } catch (err: unknown) {
