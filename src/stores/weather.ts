@@ -1,8 +1,41 @@
 import { defineStore } from 'pinia';
 import { weatherService } from 'src/api/weatherApi';
-import type { CurrentWeather, ForecastItem, WeeklyForecast } from 'src/types';
 import { onMounted, watch } from 'vue';
 import { ref } from 'vue';
+
+interface CurrentWeather {
+  name: string;
+  sys: {
+    country: string;
+    sunrise: number;
+    sunset: number;
+  };
+  main: {
+    temp: number;
+    feels_like: number;
+    humidity: number;
+    pressure: number;
+    temp_min: number;
+    temp_max: number;
+  };
+  weather: Array<{
+    id: number;
+    main: string;
+    description: string;
+    icon: string;
+  }>;
+  wind: {
+    speed: number;
+    deg: number;
+  };
+  visibility: number;
+  dt: number;
+  timezone: number;
+  coord?: {
+    lat: number;
+    lon: number;
+  };
+}
 
 interface GeolocationError extends Error {
   code?: number;
@@ -14,45 +47,39 @@ interface GeolocationError extends Error {
 export const useWeatherStore = defineStore('weather', () => {
   const searchValue = ref<string>('');
   const weatherData = ref<CurrentWeather | null>(null);
-  const forecastData = ref<WeeklyForecast | null>(null);
   const loading = ref<boolean>(false);
   const locationLoading = ref<boolean>(false);
-  const forecastLoading = ref<boolean>(false);
   const error = ref<string | null>(null);
-  const forecastError = ref<string | null>(null);
   const userLocation = ref<{ lat: number; lon: number } | null>(null);
   const locationDenied = ref<boolean>(false);
   const locationError = ref<string>('');
-
-  // Флаг для отслеживания первой загрузки
-  const isInitialLoad = ref<boolean>(true);
 
   // Функция для получения иконки погоды
   const getWeatherIcon = (iconCode?: string): string => {
     if (!iconCode) return 'help_outline';
 
     const iconMap: Record<string, string> = {
-      '01d': 'wb_sunny',
-      '01n': 'brightness_3',
-      '02d': 'partly_cloudy_day',
-      '02n': 'partly_cloudy_night',
-      '03d': 'cloud',
+      '01d': 'wb_sunny', // ясно (день)
+      '01n': 'brightness_3', // ясно (ночь)
+      '02d': 'partly_cloudy_day', // малооблачно (день)
+      '02n': 'partly_cloudy_night', // малооблачно (ночь)
+      '03d': 'cloud', // облачно
       '03n': 'cloud',
-      '04d': 'cloud_queue',
+      '04d': 'cloud_queue', // облачно с прояснениями
       '04n': 'cloud_queue',
-      '09d': 'grain',
+      '09d': 'grain', // ливень
       '09n': 'grain',
-      '10d': 'rainy',
-      '10n': 'rainy',
-      '11d': 'thunderstorm',
+      '10d': 'rainy', // дождь (день)
+      '10n': 'rainy', // дождь (ночь)
+      '11d': 'thunderstorm', // гроза
       '11n': 'thunderstorm',
-      '13d': 'ac_unit',
+      '13d': 'ac_unit', // снег
       '13n': 'ac_unit',
-      '50d': 'foggy',
+      '50d': 'foggy', // туман
       '50n': 'foggy',
     };
 
-    return iconMap[iconCode] || 'help_outline';
+    return iconMap[iconCode] || 'help_outline'; // иконка по умолчанию
   };
 
   // Функция для получения цвета иконки в зависимости от погоды
@@ -60,17 +87,17 @@ export const useWeatherStore = defineStore('weather', () => {
     if (!iconCode) return 'grey';
 
     if (iconCode.includes('01') || iconCode.includes('02')) {
-      return 'warning';
+      return 'warning'; // солнечно - желтый
     } else if (iconCode.includes('03') || iconCode.includes('04')) {
-      return 'grey-6';
+      return 'grey-6'; // облачно - серый
     } else if (iconCode.includes('09') || iconCode.includes('10')) {
-      return 'info';
+      return 'info'; // дождь - синий
     } else if (iconCode.includes('11')) {
-      return 'deep-purple';
+      return 'deep-purple'; // гроза - фиолетовый
     } else if (iconCode.includes('13')) {
-      return 'blue-grey';
+      return 'blue-grey'; // снег - голубовато-серый
     } else {
-      return 'grey';
+      return 'grey'; // по умолчанию
     }
   };
 
@@ -80,87 +107,35 @@ export const useWeatherStore = defineStore('weather', () => {
     return str.charAt(0).toUpperCase() + str.slice(1);
   };
 
-  // Функция для получения прогноза на неделю
-  const fetchWeeklyForecast = async (city: string): Promise<void> => {
-    const normalizedCity = city.trim().replace(/\s+/g, ' ').toLowerCase();
-
-    if (!normalizedCity) {
-      forecastData.value = null;
-      forecastLoading.value = false;
-      return;
-    }
-
-    forecastLoading.value = true;
-    forecastError.value = null;
-    forecastData.value = null; // Сбрасываем старые данные
-
-    try {
-      const result = await weatherService.getWeeklyForecast(normalizedCity);
-      forecastData.value = result;
-      console.log('Weekly forecast data:', result);
-    } catch (err: unknown) {
-      const errorMessage =
-        err instanceof Error ? err.message : 'Не удалось получить прогноз погоды';
-      forecastError.value = errorMessage;
-      console.error('Error fetching forecast:', err);
-      forecastData.value = null;
-    } finally {
-      forecastLoading.value = false;
-    }
-  };
-
-  // Функция для получения прогноза по координатам
-  const fetchForecastByCoords = async (lat: number, lon: number): Promise<void> => {
-    forecastLoading.value = true;
-    forecastError.value = null;
-    forecastData.value = null; // Сбрасываем старые данные
-
-    try {
-      const result = await weatherService.getForecastByCoords(lat, lon);
-      forecastData.value = result;
-      console.log('Forecast data by coords:', result);
-    } catch (err: unknown) {
-      const errorMessage =
-        err instanceof Error ? err.message : 'Не удалось получить прогноз погоды';
-      forecastError.value = errorMessage;
-      console.error('Error fetching forecast by coords:', err);
-      forecastData.value = null;
-    } finally {
-      forecastLoading.value = false;
-    }
-  };
-
   // Функция для получения погоды по названию города
   const fetchWeatherByCity = async (city: string): Promise<void> => {
-    const normalizedCity = city.trim().replace(/\s+/g, ' ').toLowerCase();
+    // Нормализуем строку: убираем лишние пробелы и приводим к единому формату
+    const normalizedCity = city
+      .trim() // убираем пробелы в начале и конце
+      .replace(/\s+/g, ' ') // заменяем множественные пробелы на один
+      .toLowerCase(); // приводим к нижнему регистру для консистентности
 
     if (!normalizedCity) {
       weatherData.value = null;
-      forecastData.value = null;
-      loading.value = false;
       return;
     }
 
     loading.value = true;
     error.value = null;
-    weatherData.value = null; // Сбрасываем старые данные
 
     try {
+      // Отправляем нормализованное название города
       const result = await weatherService.getCurrentWeather(normalizedCity);
-      weatherData.value = result;
+      weatherData.value = result as CurrentWeather;
+      // Сохраняем оригинальное название из ответа API
       searchValue.value = result.name;
-
       console.log('Weather data by city:', result);
-
-      // Загружаем прогноз для того же города
-      await fetchWeeklyForecast(normalizedCity);
     } catch (err: unknown) {
       const errorMessage =
         err instanceof Error ? err.message : 'Не удалось получить данные о погоде';
       error.value = errorMessage;
       console.error('Error fetching weather:', err);
       weatherData.value = null;
-      forecastData.value = null; // Сбрасываем прогноз при ошибке
     } finally {
       loading.value = false;
     }
@@ -170,25 +145,19 @@ export const useWeatherStore = defineStore('weather', () => {
   const fetchWeatherByCoords = async (lat: number, lon: number): Promise<void> => {
     loading.value = true;
     error.value = null;
-    weatherData.value = null; // Сбрасываем старые данные
 
     try {
       const result = await weatherService.getWeatherByCoords(lat, lon);
-      weatherData.value = result;
+      weatherData.value = result as CurrentWeather;
       searchValue.value = `${result.name}`;
       userLocation.value = { lat, lon };
-
       console.log('Weather data by coords:', result);
-
-      // Загружаем прогноз по координатам
-      await fetchForecastByCoords(lat, lon);
     } catch (err: unknown) {
       const errorMessage =
         err instanceof Error ? err.message : 'Не удалось получить данные о погоде';
       error.value = errorMessage;
       console.error('Error fetching weather by coords:', err);
       weatherData.value = null;
-      forecastData.value = null; // Сбрасываем прогноз при ошибке
     } finally {
       loading.value = false;
     }
@@ -211,6 +180,7 @@ export const useWeatherStore = defineStore('weather', () => {
         },
         (err) => {
           console.error('Geolocation error:', err);
+          // Преобразуем GeolocationPositionError в Error объект
           const errorMessage = getGeolocationErrorMessage(err);
           const error = new Error(errorMessage) as GeolocationError;
           error.code = err.code;
@@ -221,8 +191,8 @@ export const useWeatherStore = defineStore('weather', () => {
         },
         {
           enableHighAccuracy: true,
-          timeout: 5000,
-          maximumAge: 300000,
+          timeout: 15000,
+          maximumAge: 0,
         },
       );
     });
@@ -248,7 +218,6 @@ export const useWeatherStore = defineStore('weather', () => {
     locationLoading.value = true;
     locationDenied.value = false;
     locationError.value = '';
-    error.value = null;
 
     try {
       const position = await getUserLocation();
@@ -279,27 +248,29 @@ export const useWeatherStore = defineStore('weather', () => {
           locationDenied.value = true;
           error.value = err.message;
           console.log('Location permission denied');
-
-          // При отказе в геолокации загружаем погоду для города по умолчанию
-          // только при первой загрузке
-          if (isInitialLoad.value) {
-            await fetchWeatherByCity('Москва');
-          }
+        } else if (
+          geolocationErr.code === geolocationErr.TIMEOUT ||
+          err.message.includes('время') ||
+          err.message.includes('timeout')
+        ) {
+          error.value = err.message;
+        } else if (
+          geolocationErr.code === geolocationErr.POSITION_UNAVAILABLE ||
+          err.message.includes('недоступна') ||
+          err.message.includes('unavailable')
+        ) {
+          error.value = err.message;
         } else {
           error.value = err.message || 'Не удалось определить ваше местоположение';
-          if (isInitialLoad.value) {
-            await fetchWeatherByCity('Москва');
-          }
         }
       } else {
         error.value = 'Не удалось определить ваше местоположение';
-        if (isInitialLoad.value) {
-          await fetchWeatherByCity('Москва');
-        }
       }
+
+      // Загружаем погоду для города по умолчанию
+      await fetchWeatherByCity('Москва');
     } finally {
       locationLoading.value = false;
-      isInitialLoad.value = false; // Сбрасываем флаг после первой загрузки
     }
   };
 
@@ -309,17 +280,16 @@ export const useWeatherStore = defineStore('weather', () => {
     locationDenied.value = false;
     locationError.value = '';
     error.value = null;
-    isInitialLoad.value = false; // Уже не первая загрузка
     await detectUserLocation();
   };
 
-  // Загрузка начальных данных (только при монтировании)
+  // Загрузка начальных данных
   onMounted(() => {
     console.log('Component mounted, starting location detection...');
+    // Используем setTimeout для гарантии, что DOM готов
     setTimeout(() => {
       detectUserLocation().catch((err) => {
         console.error('Failed to detect location on mount:', err);
-        locationLoading.value = false; // Гарантируем сброс флага загрузки
       });
     }, 100);
   });
@@ -332,19 +302,13 @@ export const useWeatherStore = defineStore('weather', () => {
     timeoutId = setTimeout(() => {
       if (newValue.trim()) {
         void fetchWeatherByCity(newValue);
-      } else {
-        // Если поле пустое, сбрасываем данные
-        weatherData.value = null;
-        forecastData.value = null;
-        error.value = null;
-        forecastError.value = null;
       }
-    }, 800);
+    }, 500);
   });
 
   // Обработка нажатия Enter
   const handleKeyPress = (event: KeyboardEvent) => {
-    if (event.key === 'Enter' && searchValue.value.trim()) {
+    if (event.key === 'Enter' && searchValue.value) {
       void fetchWeatherByCity(searchValue.value);
     }
   };
@@ -366,73 +330,21 @@ export const useWeatherStore = defineStore('weather', () => {
     return directions[index];
   };
 
-  // Функция для группировки прогноза по дням
-  const getDailyForecast = (): ForecastItem[] => {
-    if (!forecastData.value || !forecastData.value.list) return [];
-
-    const dailyForecast: ForecastItem[] = [];
-    const seenDays = new Set<string>();
-
-    forecastData.value.list.forEach((item) => {
-      const date = new Date(item.dt * 1000);
-      const dayKey = date.toLocaleDateString('ru-RU', {
-        weekday: 'long',
-        day: 'numeric',
-        month: 'numeric',
-      });
-
-      // Берем только один прогноз на день (обычно дневной)
-      if (!seenDays.has(dayKey) && date.getHours() >= 12 && date.getHours() <= 15) {
-        seenDays.add(dayKey);
-        dailyForecast.push(item);
-      }
-    });
-
-    // Возвращаем максимум 7 дней
-    return dailyForecast.slice(0, 7);
-  };
-
-  // Получение почасового прогноза на сегодня
-  const getHourlyForecast = (): ForecastItem[] => {
-    if (!forecastData.value) return [];
-
-    const today = new Date().getDate();
-    return forecastData.value.list
-      .filter((item) => new Date(item.dt * 1000).getDate() === today)
-      .slice(0, 8);
-  };
-
   return {
-    // Основные данные
-    searchValue,
-    weatherData,
-    forecastData,
-    userLocation,
-
-    // Состояния загрузки
-    loading,
-    locationLoading,
-    forecastLoading,
-
-    // Ошибки
-    error,
-    forecastError,
-    locationError,
-    locationDenied,
-
-    // Методы
     handleKeyPress,
     formatTime,
     getWindDirection,
+    searchValue,
+    loading,
+    error,
     retryLocationDetection,
+    locationLoading,
+    weatherData,
+    userLocation,
     getWeatherIcon,
     getWeatherIconColor,
     capitalizeFirstLetter,
+    locationDenied,
     fetchWeatherByCity,
-    fetchWeatherByCoords,
-    fetchWeeklyForecast,
-    fetchForecastByCoords,
-    getDailyForecast,
-    getHourlyForecast,
   };
 });
