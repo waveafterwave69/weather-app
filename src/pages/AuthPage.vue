@@ -7,10 +7,8 @@ const authStore = useAuthStore();
 </script>
 
 <template>
-  <div class="">
-    <RegisterComponent v-if="authStore.auth === 'register'" />
+  <div>
+    <RegisterComponent v-if="authStore.authMode === 'register'" />
     <LoginComponent v-else />
   </div>
 </template>
-
-<style scoped></style>

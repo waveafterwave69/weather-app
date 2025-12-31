@@ -1,15 +1,20 @@
-// app global css in SCSS form
+// app.scss
+// Кастомные стили для тем
 
-// Основные стили для body (тёмная тема по умолчанию)
-body {
-  background-color: $dark-bg;
-  color: $dark-text;
+body.body--dark {
+  // Дополнительные стили для тёмной темы
+  background-color: #121212;
 }
 
-// Светлая тема
 body.body--light {
-  background-color: $light-bg;
-  color: $light-text;
+  // Дополнительные стили для светлой темы
+  background-color: #ffffff;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 16px;
 }
 
 a {
@@ -20,4 +25,10 @@ a {
   max-width: 1660px;
   margin: 0 auto;
   padding: 0px 15px;
+}
+
+@media (max-width: 500px) {
+  .container {
+    padding: 0px 24px;
+  }
 }

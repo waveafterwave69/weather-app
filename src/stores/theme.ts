@@ -1,76 +1,59 @@
 import { defineStore } from 'pinia';
-import { computed, ref, watch } from 'vue';
-
-type Theme = 'light' | 'dark';
+import { useStorage, usePreferredDark, useMediaQuery } from '@vueuse/core';
+import { ref, watch } from 'vue';
 
 export const useThemeStore = defineStore('theme', () => {
-  const theme = ref<Theme>('light');
+  const darkModeStorage = useStorage('darkMode', null);
+  const prefersDark = usePreferredDark();
 
-  // Инициализация темы из localStorage или системных настроек
+  const isDark = ref();
+
   const initializeTheme = () => {
-    const savedTheme = localStorage.getItem('theme') as Theme;
-    if (savedTheme) {
-      theme.value = savedTheme;
+    if (darkModeStorage.value === null) {
+      // Если в хранилище нет значения, используем системную тему
+      isDark.value = prefersDark.value;
     } else {
-      // Определяем системную тему
-      const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      theme.value = systemPrefersDark ? 'dark' : 'light';
+      // Если есть сохраненное значение, используем его
+      isDark.value = darkModeStorage.value === 'true' || darkModeStorage.value === true;
     }
-    applyTheme(theme.value);
+
+    applyTheme();
+
+    const mediaQuery = useMediaQuery('(prefers-color-scheme: dark)');
+
+    watch(mediaQuery, (isSystemDark) => {
+      if (darkModeStorage.value === null) {
+        isDark.value = isSystemDark;
+        applyTheme();
+      }
+    });
   };
 
   const toggleTheme = () => {
-    theme.value = theme.value === 'light' ? 'dark' : 'light';
+    isDark.value = !isDark.value;
+    // useStorage автоматически сохранит значение
+    darkModeStorage.value = isDark.value;
+    applyTheme();
   };
 
-  const isDark = computed(() => theme.value === 'dark');
+  const applyTheme = () => {
+    document.documentElement.setAttribute('data-theme', isDark.value ? 'dark' : 'light');
 
-  watch(
-    isDark,
-    (newVal) => {
-      if (newVal) {
-        document.body.classList.add('body--dark');
-        document.body.classList.remove('body--light');
-      } else {
-        document.body.classList.add('body--light');
-        document.body.classList.remove('body--dark');
-      }
-    },
-    { immediate: true },
-  );
-
-  const setTheme = (newTheme: Theme) => {
-    theme.value = newTheme;
+    if (isDark.value) {
+      document.body.classList.add('body--dark', 'dark');
+      document.body.classList.remove('body--light');
+    } else {
+      document.body.classList.add('body--light');
+      document.body.classList.remove('body--dark', 'dark');
+    }
   };
 
-  const applyTheme = (theme: Theme) => {
-    const root = document.documentElement;
-    root.setAttribute('data-theme', theme);
-    localStorage.setItem('theme', theme);
-  };
-
-  const setupSystemThemeListener = () => {
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-    const handleSystemThemeChange = (e: MediaQueryListEvent) => {
-      if (!localStorage.getItem('theme')) {
-        theme.value = e.matches ? 'dark' : 'light';
-      }
-    };
-
-    mediaQuery.addEventListener('change', handleSystemThemeChange);
-    return () => mediaQuery.removeEventListener('change', handleSystemThemeChange);
-  };
-
-  watch(theme, (newTheme) => {
-    applyTheme(newTheme);
-  });
+  watch(isDark, applyTheme, { immediate: false });
 
   return {
-    theme,
     isDark,
-    initializeTheme,
     toggleTheme,
-    setTheme,
-    setupSystemThemeListener,
+    initializeTheme,
+    applyTheme,
   };
 });

@@ -1,33 +1,42 @@
-$primary: #1976d2;
-$secondary: #26a69a;
-$accent: #9c27b0;
+// src/css/themes.scss
+:root {
+  // Светлая тема
+  --q-primary: #1976d2;
+  --q-secondary: #26a69a;
+  --q-accent: #9c27b0;
+  --q-dark: #f1f1f1;
+  --q-positive: #21ba45;
+  --q-negative: #c10015;
+  --q-info: #31ccec;
+  --q-warning: #f2c037;
 
-$dark: #1d1d1d;
-$dark-page: #121212;
+  // Кастомные переменные
+  --bg-primary: #ffffff;
+  --bg-secondary: #f5f5f5;
+  --bg-surface: #ffffff;
+  --text-primary: #212121;
+  --text-secondary: #757575;
+  --border-color: #e0e0e0;
+  --shadow-color: rgba(0, 0, 0, 0.1);
+}
 
-$light: #fdfdfd;
+[data-theme='dark'] {
+  // Тёмная тема
+  --q-primary: #7d69ee;
+  --q-secondary: #03dac6;
+  --q-accent: #3700b3;
+  --q-dark: #1a1a1a;
+  --q-positive: #21ba45;
+  --q-negative: #d6415c;
+  --q-info: #31ccec;
+  --q-warning: #f2c037;
 
-$positive: #21ba45;
-$negative: #c10015;
-$info: #31ccec;
-$warning: #f2c037;
-
-// Light theme
-$light-bg: #ffffff;
-$light-surface: #f8f9fa;
-$light-card: #ffffff;
-$light-text: #2c3e50;
-$light-text-secondary: #6c757d;
-$light-border: #e9ecef;
-$light-hover: #f8f9fa;
-$light-active: #e9ecef;
-
-// Dark theme
-$dark-bg: #121212;
-$dark-surface: #1e1e1e;
-$dark-card: #2d2d2d;
-$dark-text: #e0e0e0;
-$dark-text-secondary: #a0a0a0;
-$dark-border: #404040;
-$dark-hover: #2a2a2a;
-$dark-active: #363636;
+  // Кастомные переменные
+  --bg-primary: #121212;
+  --bg-secondary: #1e1e1e;
+  --bg-surface: #2d2d2d;
+  --text-primary: #ffffff;
+  --text-secondary: #b0b0b0;
+  --border-color: #404040;
+  --shadow-color: rgba(0, 0, 0, 0.3);
+}
